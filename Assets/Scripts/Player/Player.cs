@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using Lean.Pool;
 using System;
+using UnityEngine.Events;
 
 public class Player : MonoBehaviour
 {
@@ -17,7 +18,8 @@ public class Player : MonoBehaviour
     public int Team = 1;
     public int currentHealth;
 
-    public static event Action<Player, int> PlayerHpChange;
+    //public static event Action<Player, int> PlayerHpChange;
+    [SerializeField]UnityEvent<Player, int> PlayerHpChange;
 
     void Start() => InitPlayerHealth();
 
@@ -25,7 +27,8 @@ public class Player : MonoBehaviour
     {
         currentHealth = property.health;
         if (PlayerHpChange != null)
-            PlayerHpChange(this, currentHealth);
+            // PlayerHpChange(this, currentHealth);
+            PlayerHpChange.Invoke(this, currentHealth);
     }
 
     void FixedUpdate()
@@ -42,7 +45,8 @@ public class Player : MonoBehaviour
         if (bul.gameObject.tag == "Bullet" && Team != bul.gameObject.GetComponent<Bullet>().Team)
         {
             currentHealth -= bul.gameObject.GetComponent<Bullet>().attack;
-            if (PlayerHpChange != null) PlayerHpChange(this, currentHealth);
+            //if (PlayerHpChange != null) PlayerHpChange(this, currentHealth);
+            PlayerHpChange?.Invoke(this, currentHealth);
         }
     }
 

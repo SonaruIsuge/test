@@ -7,15 +7,15 @@ public class HPText : MonoBehaviour
 {
     public Text HpText;
 
-    void OnEnable()
-    {
-        Player.PlayerHpChange += UpdateHpText;
-    }
+    // void OnEnable()
+    // {
+    //     Player.PlayerHpChange += UpdateHpText;
+    // }
 
-    void OnDisable()
-    {
-        Player.PlayerHpChange -= UpdateHpText;
-    }
+    // void OnDisable()
+    // {
+    //     Player.PlayerHpChange -= UpdateHpText;
+    // }
 
 
     public void UpdateHpText(Player sender, int currentHealth)

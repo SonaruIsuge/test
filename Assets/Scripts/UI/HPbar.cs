@@ -8,15 +8,15 @@ public class HPbar : MonoBehaviour
     public Image HpBarImg;
     private float HPpercent;
 
-    void OnEnable()
-    {
-        Player.PlayerHpChange += UpdateHpBar;
-    }
+    // void OnEnable()
+    // {
+    //     Player.PlayerHpChange += UpdateHpBar;
+    // }
 
-    void OnDisable()
-    {
-        Player.PlayerHpChange -= UpdateHpBar;
-    }
+    // void OnDisable()
+    // {
+    //     Player.PlayerHpChange -= UpdateHpBar;
+    // }
 
     // Start is called before the first frame update
     void Start()
