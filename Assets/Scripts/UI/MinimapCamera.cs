@@ -19,11 +19,11 @@ public class MinimapCamera : MonoBehaviour
     {
         float cameraHalfWidth = minimapC.orthographicSize;
         float cameraHalfHeight = minimapC.orthographicSize;
-        Debug.Log(cameraHalfWidth + ", " + cameraHalfHeight);
+        //Debug.Log(cameraHalfWidth + ", " + cameraHalfHeight);
         if(player != null)
         {
-            miniCameraX = Mathf.Clamp(player.position.x, -40  + cameraHalfWidth, 60 - cameraHalfWidth);
-            miniCameraY = Mathf.Clamp(player.position.y, -20 + cameraHalfHeight, 80 - cameraHalfHeight);
+            miniCameraX = Mathf.Clamp(player.position.x, cameraHalfWidth, 100 - cameraHalfWidth);
+            miniCameraY = Mathf.Clamp(player.position.y, cameraHalfHeight, 100 - cameraHalfHeight);
             transform.position = new Vector3(miniCameraX, miniCameraY, transform.position.z);
         }
     }

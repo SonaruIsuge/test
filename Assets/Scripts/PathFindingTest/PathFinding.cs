@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Tilemaps;
 
 public class PathFinding {
 
@@ -10,9 +11,24 @@ public class PathFinding {
     private GridBase<PathNode> grid;
     private List<PathNode> openList;
     private List<PathNode> closedList;
-    public PathFinding(int width, int height)
+    public PathFinding(int width, int height, float cellSize, Tilemap tilemap)
     {
-        grid = new GridBase<PathNode>(width, height, 10f, new Vector3(-45, -45, 0), (GridBase<PathNode> g, int x, int y) => new PathNode(g, x, y));
+        grid = new GridBase<PathNode>(width, height, cellSize, new Vector3(0, 0, 0), (GridBase<PathNode> g, int x, int y) => new PathNode(g, x, y));
+        
+        tilemap.CompressBounds();
+        BoundsInt bounds = tilemap.cellBounds;
+        TileBase[] allTiles = tilemap.GetTilesBlock(bounds);
+        
+        for(int x = 0; x < bounds.size.x; x++)
+        {
+            for(int y = 0; y < bounds.size.y; y++)
+            {
+                TileBase tile = allTiles[x + y * bounds.size.x];
+                if (tile != null) {
+                    grid.GetGridObject(x, y).SetTileBase(tile);
+                }
+            }
+        }
     }
 
     public GridBase<PathNode> GetGrid()
@@ -25,6 +41,8 @@ public class PathFinding {
         PathNode startNode = grid.GetGridObject(startX, startY);
         PathNode endNode = grid.GetGridObject(endX, endY);
         
+        // 初始化openList和closeList
+        // 將起點加入openList中
         openList = new List<PathNode> { startNode };
         closedList = new List<PathNode>();
 
@@ -36,35 +54,44 @@ public class PathFinding {
                 pathNode.gCost = int.MaxValue;
                 pathNode.CalculateFCost();
                 pathNode.cameFromNode = null;
-
             }
         }
 
+        // 設置起點優先級為0（優先級最高）
         startNode.gCost = 0;
         startNode.hCost = CalculateDistanceCost(startNode, endNode);
         startNode.CalculateFCost();
 
+        // 如果openList不為空，則從openList中選取優先級最高的節點currentNode
         while(openList.Count > 0)
         {
             PathNode currentNode = GetLowestFCostNode(openList);
+
+            // 如果currentNode為終點，則
             if(currentNode == endNode)
             {
+                // 從終點開始逐步追蹤parent節點，一直達到起點，返回找到的結果路徑，算法結束
                 return CalculatePath(endNode);
             }
-
+            
+            // 如果currentNode不是終點，則將currentNode從openList中刪除，並加入closeList中
             openList.Remove(currentNode);
             closedList.Add(currentNode);
 
+            // 遍歷currentNode所有的鄰近節點
             foreach(PathNode neighborNode in GetNeighborList(currentNode))
             {
-                if(closedList.Contains(neighborNode)) continue;                                                 
+                // 如果鄰近節點m在closeList中，則跳過，選取下一個鄰近節點
+                if(closedList.Contains(neighborNode)) continue;
 
                 if(!neighborNode.isWalkable)
                 {
                     closedList.Add(neighborNode);
                     continue;
                 }
-
+                
+                // 設置節點m的parent為currentNode
+                // 計算節點m的優先級
                 int tentativeGCost = currentNode.gCost + CalculateDistanceCost(currentNode, neighborNode);
                 if(tentativeGCost < neighborNode.gCost)
                 {
@@ -72,7 +99,8 @@ public class PathFinding {
                     neighborNode.gCost = tentativeGCost;
                     neighborNode.hCost = CalculateDistanceCost(neighborNode, endNode);
                     neighborNode.CalculateFCost();
-
+                    
+                    // 如果鄰近節點m也不在openList中，則將節點m加入openList中
                     if(!openList.Contains(neighborNode))
                     {
                         openList.Add(neighborNode);
@@ -94,7 +122,7 @@ public class PathFinding {
             //Left
             neighborList.Add(GetNode(currentNode.x - 1, currentNode.y));
             //LeftDown
-            if(currentNode.y - 11 >= 0) neighborList.Add(GetNode(currentNode.x - 1, currentNode.y - 1));
+            if(currentNode.y - 1 >= 0) neighborList.Add(GetNode(currentNode.x - 1, currentNode.y - 1));
             //LeftUp
             if(currentNode.y + 1 < grid.GetHeight()) neighborList.Add(GetNode(currentNode.x - 1, currentNode.y + 1));
         }

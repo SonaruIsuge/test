@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Tilemaps;
 
 public class PathNode {
     public GridBase<PathNode> grid;
@@ -13,6 +14,7 @@ public class PathNode {
 
     public bool isWalkable;
     public PathNode cameFromNode;
+    public TileBase tile;
 
     public PathNode(GridBase<PathNode> grid, int x, int y)
     {
@@ -20,6 +22,12 @@ public class PathNode {
         this.x = x;
         this.y = y;
         isWalkable = true;
+        tile = null;
+    }
+
+    public void SetTileBase(TileBase tile)
+    {
+        this.tile = tile;
     }
 
     public void CalculateFCost()

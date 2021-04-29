@@ -39,7 +39,8 @@ public class EnemyTank : MonoBehaviour
     public Vector3 currentTarget;
     private bool forward = true;
     private float enemyWidth;
-    private Queue<Vector3> fixQueue;
+
+    public Animator animator;
 
     public Dictionary<EnemyState, State> StateDic;
 
@@ -60,7 +61,6 @@ public class EnemyTank : MonoBehaviour
         player = FindObjectOfType<Player>().gameObject;
         enemyRb = GetComponent<Rigidbody2D>();
         PatrolQueue = new Queue<Vector3>();
-        fixQueue = new Queue<Vector3>();
         s_patrolCtrl = PatrolCtrlObj.GetComponent<PatrolPointControl>();
         enemyWidth = GetComponent<Collider2D>().bounds.size.y;
     }
@@ -123,27 +123,27 @@ public class EnemyTank : MonoBehaviour
 
             Vector3 dir = currentTarget - transform.position;
             Ray2D ray = new Ray2D(transform.position, dir);
-            RaycastHit2D hit = Physics2D.Raycast(ray.origin, ray.direction, Vector3.Distance(transform.position, currentTarget) + 1.414f * enemyWidth, 1 << 8);
-            if (fixQueue.Count != 0)
-            {
-                currentTarget = fixQueue.Dequeue();
-                return;
-            }
-            else
-            {
-                //躲避障礙物(須修正)
-                if (hit.collider)
-                {
-                    Debug.DrawLine(ray.origin, hit.point, Color.red);
-                    Vector3 v_up = transform.up;
-                    v_up.x = 0;
-                    Vector3 v_rev = transform.position - currentTarget;
-                    v_rev.y = 0;
-                    Vector3 v_fix = v_up + v_rev;
-                    fixQueue.Enqueue(currentTarget + v_fix);
-                    return;
-                }
-            }
+            // RaycastHit2D hit = Physics2D.Raycast(ray.origin, ray.direction, Vector3.Distance(transform.position, currentTarget) + 1.414f * enemyWidth, 1 << 8);
+            // if (fixQueue.Count != 0)
+            // {
+            //     currentTarget = fixQueue.Dequeue();
+            //     return;
+            // }
+            // else
+            // {
+            //     //躲避障礙物(須修正)
+            //     if (hit.collider)
+            //     {
+            //         Debug.DrawLine(ray.origin, hit.point, Color.red);
+            //         Vector3 v_up = transform.up;
+            //         v_up.x = 0;
+            //         Vector3 v_rev = transform.position - currentTarget;
+            //         v_rev.y = 0;
+            //         Vector3 v_fix = v_up + v_rev;
+            //         fixQueue.Enqueue(currentTarget + v_fix);
+            //         return;
+            //     }
+            // }
             //取得轉向角度
             dir.z = 0f;
             dir.Normalize();
@@ -198,6 +198,7 @@ public class EnemyTank : MonoBehaviour
         {
             if (reloadTimer.IsFinished)
             {
+                animator.Play("enemyFire");
                 EnemyBulletShoot(Bullet, property.BulletSpeed);
                 reloadTimer.Reset();
             }

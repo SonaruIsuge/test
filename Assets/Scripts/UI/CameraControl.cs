@@ -21,8 +21,8 @@ public class CameraControl : MonoBehaviour
         float cameraHalfHeight = mc.orthographicSize;
         if(player != null)
         {
-            cameraX = Mathf.Clamp(player.position.x, -40  + cameraHalfWidth, 60 - cameraHalfWidth);
-            cameraY = Mathf.Clamp(player.position.y, -20 + cameraHalfHeight, 80 - cameraHalfHeight);
+            cameraX = Mathf.Clamp(player.position.x, cameraHalfWidth, 100 - cameraHalfWidth);
+            cameraY = Mathf.Clamp(player.position.y, cameraHalfHeight, 100 - cameraHalfHeight);
             transform.position = new Vector3(cameraX, cameraY, transform.position.z);
         }
     }

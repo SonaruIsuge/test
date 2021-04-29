@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using Scream.UniMO;
 using Lean.Pool;
 using System;
 using UnityEngine.Events;
@@ -15,20 +16,25 @@ public class Player : MonoBehaviour
     private GameObject BulletClone;
     public TankProperty property;
     protected float CountTime = 0;
+    private ScaledTimer reloadTimer;
     public int Team = 1;
     public int currentHealth;
+
+    public Animator animator;
 
     //public static event Action<Player, int> PlayerHpChange;
     [SerializeField]UnityEvent<Player, int> PlayerHpChange;
 
-    void Start() => InitPlayerHealth();
+    void Start() 
+    {
+        InitPlayerHealth();
+        reloadTimer = new ScaledTimer(property.ReloadTime, false);
+    } 
 
     void InitPlayerHealth()
     {
         currentHealth = property.health;
-        if (PlayerHpChange != null)
-            // PlayerHpChange(this, currentHealth);
-            PlayerHpChange.Invoke(this, currentHealth);
+        if (PlayerHpChange != null) PlayerHpChange.Invoke(this, currentHealth);
     }
 
     void FixedUpdate()
@@ -81,13 +87,13 @@ public class Player : MonoBehaviour
     }
     public void Shoot()
     {
-        CountTime += Time.deltaTime;
         if (Input.GetMouseButton(0))
         {
-            if (CountTime >= property.ReloadTime)
+            if (reloadTimer.IsFinished)
             {
+                animator.Play("fire");
                 InitBullet();
-                CountTime = 0;
+                reloadTimer.Reset();
             }
         }
     }
@@ -97,7 +103,7 @@ public class Player : MonoBehaviour
         Quaternion rot = ShootPoint.transform.rotation;
         BulletClone = LeanPool.Spawn(Bullet, pos, rot);
         BulletClone.GetComponent<SpriteRenderer>().color = new Color(0.17f, 0.7f, 0.32f);
-        BulletClone.GetComponent<Rigidbody2D>().velocity = Gun.up * property.BulletSpeed;//給予砲彈初速
+        BulletClone.GetComponent<Rigidbody2D>().velocity = Gun.up * property.BulletSpeed;   //給予砲彈初速
         BulletClone.GetComponent<Bullet>().attack = property.attack;
         BulletClone.GetComponent<Bullet>().Team = Team;
     }

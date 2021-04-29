@@ -60,6 +60,9 @@ public class EnemyInspector : Editor
             enemy.currentTarget = EditorGUILayout.Vector3Field("Current Target", enemy.currentTarget);
         }
         
+        EditorGUILayout.Space();    
+
+        enemy.animator = (Animator)EditorGUILayout.ObjectField("Animator", enemy.animator, typeof(Animator), true);
 
         EditorGUILayout.EndVertical();
 
