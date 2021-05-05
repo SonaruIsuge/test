@@ -5,6 +5,7 @@ using CircleCal.Math;
 using Scream.UniMO;
 using Lean.Pool;
 using System;
+using UnityEngine.Tilemaps;
 
 public enum EnemyState
 {
@@ -38,9 +39,15 @@ public class EnemyTank : MonoBehaviour
     public int segmentNum;
     public Vector3 currentTarget;
     private bool forward = true;
-    private float enemyWidth;
 
     public Animator animator;
+
+    public Tilemap tilemap;
+    public Tilemap colTilemap;
+    public float cellSize;
+    private PathFinding pathFinding;
+    private int startX, startY, endX, endY;
+    private List<PathNode> path;
 
     public Dictionary<EnemyState, State> StateDic;
 
@@ -62,7 +69,12 @@ public class EnemyTank : MonoBehaviour
         enemyRb = GetComponent<Rigidbody2D>();
         PatrolQueue = new Queue<Vector3>();
         s_patrolCtrl = PatrolCtrlObj.GetComponent<PatrolPointControl>();
-        enemyWidth = GetComponent<Collider2D>().bounds.size.y;
+        currentTarget = transform.position;
+
+        colTilemap.CompressBounds();
+        tilemap.CompressBounds();
+        pathFinding = new PathFinding(tilemap.cellBounds.size.x, tilemap.cellBounds.size.y, cellSize, tilemap);
+        path = new List<PathNode>();
     }
 
     void Start()
@@ -76,7 +88,6 @@ public class EnemyTank : MonoBehaviour
     void Update()
     {
         CurrentState.Stay(this);
-        //Debug.Log(enemyWidth);
     }
 
     //設定扣血
@@ -116,39 +127,42 @@ public class EnemyTank : MonoBehaviour
     }
 
     //敵人巡邏模式移動
-    public void CurveMove()
+    public void CurveMove(bool isAware)
     {
-        if (transform.position != currentTarget)
+        if(path != null && path.Count > 0)
         {
+            Vector3 targetPos = new Vector3(path[0].x, path[0].y) * cellSize + Vector3.one * (cellSize/2) + path[0].grid.originPosition;
+            if(transform.position != targetPos)
+            {
+                Vector3 dir = targetPos - transform.position;
+                //取得轉向角度
+                dir.z = 0f;
+                dir.Normalize();
+                float angle = Mathf.Atan2(dir.x, dir.y) * Mathf.Rad2Deg;
+                //RotateTarget(this.EnemyHead, targetPos, property.HeadRotSpeed);
+                RotateTarget(this.gameObject, targetPos, property.RotateSpeed);
 
+                //角度容許值：±3°
+                if (Quaternion.Angle(transform.rotation, Quaternion.Euler(0, 0, -angle)) <= 3.0f)
+                {
+                    transform.position = Vector3.MoveTowards(transform.position, targetPos, property.MoveSpeed * Time.deltaTime);
+                }
+            }
+            else 
+            {
+                path.Remove(path[0]);                
+            }
+        }
+        else if (transform.position != currentTarget)
+        {
             Vector3 dir = currentTarget - transform.position;
-            Ray2D ray = new Ray2D(transform.position, dir);
-            // RaycastHit2D hit = Physics2D.Raycast(ray.origin, ray.direction, Vector3.Distance(transform.position, currentTarget) + 1.414f * enemyWidth, 1 << 8);
-            // if (fixQueue.Count != 0)
-            // {
-            //     currentTarget = fixQueue.Dequeue();
-            //     return;
-            // }
-            // else
-            // {
-            //     //躲避障礙物(須修正)
-            //     if (hit.collider)
-            //     {
-            //         Debug.DrawLine(ray.origin, hit.point, Color.red);
-            //         Vector3 v_up = transform.up;
-            //         v_up.x = 0;
-            //         Vector3 v_rev = transform.position - currentTarget;
-            //         v_rev.y = 0;
-            //         Vector3 v_fix = v_up + v_rev;
-            //         fixQueue.Enqueue(currentTarget + v_fix);
-            //         return;
-            //     }
-            // }
             //取得轉向角度
             dir.z = 0f;
             dir.Normalize();
             float angle = Mathf.Atan2(dir.x, dir.y) * Mathf.Rad2Deg;
-            transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.Euler(0, 0, -angle), property.RotateSpeed * Time.deltaTime);
+            if(!isAware) RotateTarget(this.EnemyHead, currentTarget, property.HeadRotSpeed);
+            RotateTarget(this.gameObject, currentTarget, property.RotateSpeed);
+
             //角度容許值：±3°
             if (Quaternion.Angle(transform.rotation, Quaternion.Euler(0, 0, -angle)) <= 3.0f)
             {
@@ -174,18 +188,47 @@ public class EnemyTank : MonoBehaviour
         }
     }
 
-    //敵人瞄準目標
+    //敵人砲塔瞄準目標
     public void LookTarget(GameObject target)
     {
         if (target != null)
+            RotateTarget(this.EnemyHead, target, property.HeadRotSpeed);
+    }
+
+    //尋找到currentTarget的最短路徑
+    public void FindPathToCurrentTarget()
+    {
+        path.Clear();
+        pathFinding.GetGrid().GetXY(this.transform.position, out startX, out startY);
+        pathFinding.GetGrid().GetXY(currentTarget, out endX, out endY);
+        SetObstacle();
+        path = pathFinding.FindPath(startX, startY, endX, endY);
+
+        for(int i = 0; i < path.Count - 1; i++)
+        {
+            Debug.DrawLine(new Vector3(path[i].x, path[i].y) * cellSize + Vector3.one * (cellSize/2) + path[i].grid.originPosition, 
+            new Vector3(path[i+1].x, path[i+1].y) * cellSize + Vector3.one * (cellSize/2) + path[i].grid.originPosition, Color.green, 100f);
+        }
+    }
+
+    //敵人追擊
+    public void TraceTarget(GameObject target)
+    {
+        if(target == null) return;
+        else if(DistanceToPalyer() > 5f)
         {
             Vector3 targetPos = target.transform.position;
             Vector3 direction = targetPos - EnemyHead.transform.position;
             direction.z = 0f;
             direction.Normalize();
             float angle = Mathf.Atan2(direction.x, direction.y) * Mathf.Rad2Deg;
-            EnemyHead.transform.rotation = Quaternion.RotateTowards(EnemyHead.transform.rotation, Quaternion.Euler(0, 0, -angle), property.HeadRotSpeed * Time.deltaTime);
-            transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.Euler(0, 0, -angle), property.RotateSpeed * Time.deltaTime);
+            RotateTarget(this.gameObject, target, property.RotateSpeed);
+            
+            //角度容許值：±3°
+            if (Quaternion.Angle(transform.rotation, Quaternion.Euler(0, 0, -angle)) <= 3.0f)
+            {
+                transform.position = Vector3.MoveTowards(transform.position, targetPos, property.MoveSpeed * Time.deltaTime);
+            }   
         }
     }
 
@@ -209,9 +252,7 @@ public class EnemyTank : MonoBehaviour
     //設定子彈生成與前進
     private void EnemyBulletShoot(GameObject bullet, float speed)
     {
-        Vector3 pos = EnemyShootPoint.position;
-        Quaternion rot = EnemyShootPoint.rotation;
-        BulletClone = LeanPool.Spawn(bullet, pos, rot);
+        BulletClone = LeanPool.Spawn(bullet, EnemyShootPoint.position, EnemyShootPoint.rotation);
         BulletClone.GetComponent<SpriteRenderer>().color = new Color(0.16f, 0.62f, 0.9f);
         BulletClone.GetComponent<Rigidbody2D>().velocity = EnemyGun.up * speed;
         BulletClone.GetComponent<Bullet>().attack = property.attack;
@@ -240,7 +281,7 @@ public class EnemyTank : MonoBehaviour
     }
 
     //計算貝茲曲線(巡邏狀態)
-    public Vector3 CalBezier(float t, Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3)
+    private Vector3 CalBezier(float t, Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3)
     {
         float u = 1 - t;
         Vector3 res = (u * u * u * p0) + (3 * t * u * u * p1) + (3 * t * t * u * p2) + (t * t * t * p3);
@@ -268,5 +309,44 @@ public class EnemyTank : MonoBehaviour
 
         //Gizmos.color = tempColor;
     }
+
+    public void SetObstacle()
+    {
+        for(int x = 0; x < tilemap.cellBounds.size.x; x++)
+        {
+            for(int y = 0; y < tilemap.cellBounds.size.y; y++)
+            {
+                TileBase colTile = colTilemap.GetTile(new Vector3Int(x, y, 0));
+                if(colTile != null) 
+                {
+                    pathFinding.GetNode(x, y)?.SetIsWalkable(false);
+                    pathFinding.GetNode(x-1, y)?.SetIsWalkable(false);
+                    pathFinding.GetNode(x+1, y)?.SetIsWalkable(false);
+                    pathFinding.GetNode(x, y-1)?.SetIsWalkable(false);
+                    pathFinding.GetNode(x, y+1)?.SetIsWalkable(false);
+                }
+            }
+        }
+    }
+
+    //定速轉到定位
+    public void RotateTarget(GameObject thisObject, Vector3 targetPos, float rotateSpeed)
+    {
+        if(targetPos == null) return;
+        Vector3 thisPos = thisObject.transform.position;
+        Vector3 direction = targetPos - thisPos;
+        direction.z = 0f;
+        direction.Normalize();
+        float angle = Mathf.Atan2(direction.x, direction.y) * Mathf.Rad2Deg;
+        thisObject.transform.rotation = Quaternion.RotateTowards(thisObject.transform.rotation, Quaternion.Euler(0, 0, -angle), rotateSpeed * Time.deltaTime);
+    }
+
+    public void RotateTarget(GameObject thisObject, GameObject target, float rotateSpeed)
+    {
+        if(target == null) return;
+        Vector3 targetPos = target.transform.position;
+        RotateTarget(thisObject, targetPos, rotateSpeed);
+    }
+
 
 }

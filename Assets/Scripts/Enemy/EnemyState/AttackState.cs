@@ -6,12 +6,15 @@ public class AttackState : State
 {
     public override void Enter(EnemyTank enemy)
     {
-
+        
     }
     public override void Stay(EnemyTank enemy)
     {
-        enemy.LookTarget(enemy.player);
+        //enemy.RotateTarget(enemy.gameObject, enemy.player, enemy.property.RotateSpeed);
+        enemy.RotateTarget(enemy.EnemyHead, enemy.player, enemy.property.HeadRotSpeed);
+        enemy.TraceTarget(enemy.player);
         enemy.ShootTarget();
+        
         if(enemy.currentHealth <= 0)
         {
             enemy.ChangeState(EnemyState.Die);
@@ -23,6 +26,6 @@ public class AttackState : State
     }
     public override void Exit(EnemyTank enemy)
     {
-        
+        enemy.FindPathToCurrentTarget();
     }
 }

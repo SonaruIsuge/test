@@ -6,11 +6,11 @@ public class PatrolState : State
 {
     public override void Enter(EnemyTank enemy)
     {
-        enemy.currentTarget  = enemy.transform.position;
+        //enemy.currentTarget  = enemy.transform.position;
     }
     public override void Stay(EnemyTank enemy)
     {
-        enemy.CurveMove();
+        enemy.CurveMove(false);
 
         if(enemy.currentHealth <= 0)
         {

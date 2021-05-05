@@ -36,7 +36,7 @@ public class GridBase<TGridObject> {
             }
         }
 
-        bool isDebug = true;
+        bool isDebug = false;
         if(isDebug)
         {
             debugTextArray = new TextMesh[width, height];

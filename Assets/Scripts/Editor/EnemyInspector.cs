@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using UnityEngine;
 using UnityEditor;
+using UnityEngine.Tilemaps;
 
 [CustomEditor(typeof(EnemyTank))]
 [CanEditMultipleObjects]
@@ -8,6 +9,8 @@ public class EnemyInspector : Editor
 {   
     bool showParts = false;
     bool showPatrolSettings = false;
+
+    bool showPathFinding = false;
     EnemyTank enemy;
     void OnEnable()
     {
@@ -64,6 +67,17 @@ public class EnemyInspector : Editor
 
         enemy.animator = (Animator)EditorGUILayout.ObjectField("Animator", enemy.animator, typeof(Animator), true);
 
+        EditorGUILayout.Space();
+
+        showPathFinding = EditorGUILayout.Foldout(showPathFinding, "PathFinding");
+        if(showPathFinding)
+        {
+            enemy.tilemap = (Tilemap)EditorGUILayout.ObjectField("Tilemap", enemy.tilemap, typeof(Tilemap), true);
+
+            enemy.colTilemap = (Tilemap)EditorGUILayout.ObjectField("Collision Tilemap", enemy.colTilemap, typeof(Tilemap), true);
+
+            enemy.cellSize = (float)EditorGUILayout.FloatField("Cellsize", enemy.cellSize);
+        }
         EditorGUILayout.EndVertical();
 
         if (GUI.changed)

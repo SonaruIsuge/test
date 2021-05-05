@@ -72,9 +72,6 @@ public class TestPathFinding : MonoBehaviour
                 }
             }            
         }
-
-        // if(Input.GetMouseButtonDown(1)) 
-        //     SetObstacle();
     }
 
     public void GetMouseWorldPosition(out int x, out int y)
@@ -86,13 +83,19 @@ public class TestPathFinding : MonoBehaviour
 
     public void SetObstacle()
     {
-        // GetMouseWorldPosition(out int x, out int y);
         for(int x = 0; x < width; x++)
         {
             for(int y = 0; y < height; y++)
             {
                 TileBase colTile = colliderTilemap.GetTile(new Vector3Int(x, y, 0));
-                if(colTile != null) pathFinding.GetNode(x, y).SetIsWalkable(!pathFinding.GetNode(x, y).isWalkable);
+                if(colTile != null) 
+                {
+                    pathFinding.GetNode(x, y)?.SetIsWalkable(false);
+                    pathFinding.GetNode(x-1, y)?.SetIsWalkable(false);
+                    pathFinding.GetNode(x+1, y)?.SetIsWalkable(false);
+                    pathFinding.GetNode(x, y-1)?.SetIsWalkable(false);
+                    pathFinding.GetNode(x, y+1)?.SetIsWalkable(false);
+                }
             }
         }
     }
