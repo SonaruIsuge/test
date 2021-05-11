@@ -58,22 +58,11 @@ public class Player : MonoBehaviour
 
     public void Move()
     {
-        if (Input.GetKey(KeyCode.W))
-        {
-            transform.Translate(Vector2.up * property.MoveSpeed * Time.deltaTime);
-        }
-        if (Input.GetKey(KeyCode.S))
-        {
-            transform.Translate(Vector2.down * property.MoveSpeed * Time.deltaTime);
-        }
-        if (Input.GetKey(KeyCode.A))
-        {
-            transform.Rotate(Vector3.forward * Time.deltaTime * property.RotateSpeed);
-        }
-        if (Input.GetKey(KeyCode.D))
-        {
-            transform.Rotate(Vector3.forward * Time.deltaTime * -property.RotateSpeed);
-        }
+        var horizontal = Input.GetAxis("Horizontal");
+        var vertical = Input.GetAxis("Vertical");
+
+        transform.position += vertical * transform.up * property.MoveSpeed * Time.deltaTime;
+        transform.Rotate(-Vector3.forward * horizontal * property.RotateSpeed * Time.deltaTime);
     }
 
     public void HeadControl()
@@ -103,7 +92,7 @@ public class Player : MonoBehaviour
         Quaternion rot = ShootPoint.transform.rotation;
         BulletClone = LeanPool.Spawn(Bullet, pos, rot);
         BulletClone.GetComponent<SpriteRenderer>().color = new Color(0.17f, 0.7f, 0.32f);
-        BulletClone.GetComponent<Rigidbody2D>().velocity = Gun.up * property.BulletSpeed;   //給予砲彈初速
+        BulletClone.GetComponent<Rigidbody2D>().AddForce(BulletClone.transform.up * property.BulletSpeed * Time.deltaTime);   //給予砲彈初速
         BulletClone.GetComponent<Bullet>().attack = property.attack;
         BulletClone.GetComponent<Bullet>().Team = Team;
     }

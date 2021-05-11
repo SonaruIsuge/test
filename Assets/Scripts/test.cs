@@ -1,38 +1,66 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
 public class test : MonoBehaviour
 {
-    private Tilemap tilemap;
-    private BoundsInt bounds;
-    private TileBase[] allTiles;
-    // Start is called before the first frame update
-    void Start()
+    List<TestComponent> components = new List<TestComponent>();
+    public Rigidbody2D Rigidbody { get; private set; }
+    private void Start()
     {
-        tilemap = GetComponent<Tilemap>();
-        tilemap.CompressBounds();
-        bounds = tilemap.cellBounds;
-        allTiles = tilemap.GetTilesBlock(bounds);
-        
-        for(int x = 0; x < bounds.size.x; x++)
-        {
-            for(int y = 0; y < bounds.size.y; y++)
-            {
-                TileBase tile = allTiles[x + y * bounds.size.x];
-                if (tile != null) {
-                    Debug.Log("x:" + x + " y:" + y + " tile:" + tile.name);
-                } else {
-                    Debug.Log("x:" + x + " y:" + y + " tile: (null)");
-                }
-            }
-        }
-    }    
-    
-    // Update is called once per frame
-    void Update()
+        Rigidbody = GetComponent<Rigidbody2D>();
+        components.Add(new Move(20f, this));
+        components.Add(new Attack(10f, this));
+    }
+
+    private void Update()
     {
-                
+        components.ForEach(c => c.Tick());
+    }
+}
+
+abstract public class TestComponent
+{
+    protected test Parent { get; private set; }
+    public TestComponent(test parent)
+    {
+        Parent = parent;
+    }
+    abstract public void Tick();
+}
+
+
+
+public class Move : TestComponent
+{
+    float vel;
+    public Move(float vel, test parent) : base(parent)
+    {
+        this.vel = vel;
+    }
+
+    public override void Tick()
+    {
+        Parent.Rigidbody.velocity=default;
+        Debug.Log($"Move Tikc{vel}");
+    }
+}
+
+
+
+public class Attack : TestComponent
+{
+    public float attack;
+
+    public Attack(float attack, test parent) : base(parent)
+    {
+        this.attack = attack;
+    }
+
+    public override void Tick()
+    {
+        Debug.Log($"Attack Tikc{attack}");
     }
 }

@@ -11,7 +11,7 @@ public class AttackState : State
     public override void Stay(EnemyTank enemy)
     {
         //enemy.RotateTarget(enemy.gameObject, enemy.player, enemy.property.RotateSpeed);
-        enemy.RotateTarget(enemy.EnemyHead, enemy.player, enemy.property.HeadRotSpeed);
+        enemy.RotateTarget(enemy.EnemyHead, enemy.player, enemy.property.HeadRotSpeed, out float angle);
         enemy.TraceTarget(enemy.player);
         enemy.ShootTarget();
         

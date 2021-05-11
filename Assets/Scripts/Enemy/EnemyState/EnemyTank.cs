@@ -65,7 +65,7 @@ public class EnemyTank : MonoBehaviour
         };
         currentHealth = property.health;
         EnemySprite.sprite = property.MiniMapIcon;
-        player = FindObjectOfType<Player>().gameObject;
+        player = FindObjectOfType<PlayerInput>().gameObject;
         enemyRb = GetComponent<Rigidbody2D>();
         PatrolQueue = new Queue<Vector3>();
         s_patrolCtrl = PatrolCtrlObj.GetComponent<PatrolPointControl>();
@@ -134,13 +134,13 @@ public class EnemyTank : MonoBehaviour
             Vector3 targetPos = new Vector3(path[0].x, path[0].y) * cellSize + Vector3.one * (cellSize/2) + path[0].grid.originPosition;
             if(transform.position != targetPos)
             {
-                Vector3 dir = targetPos - transform.position;
-                //取得轉向角度
-                dir.z = 0f;
-                dir.Normalize();
-                float angle = Mathf.Atan2(dir.x, dir.y) * Mathf.Rad2Deg;
-                //RotateTarget(this.EnemyHead, targetPos, property.HeadRotSpeed);
-                RotateTarget(this.gameObject, targetPos, property.RotateSpeed);
+                // Vector3 dir = targetPos - transform.position;
+                // //取得轉向角度
+                // dir.z = 0f;
+                // dir.Normalize();
+                // float angle = Mathf.Atan2(dir.x, dir.y) * Mathf.Rad2Deg;
+                RotateTarget(this.EnemyHead, targetPos, property.HeadRotSpeed, out float headAngle);
+                RotateTarget(this.gameObject, targetPos, property.RotateSpeed, out float angle);
 
                 //角度容許值：±3°
                 if (Quaternion.Angle(transform.rotation, Quaternion.Euler(0, 0, -angle)) <= 3.0f)
@@ -155,13 +155,13 @@ public class EnemyTank : MonoBehaviour
         }
         else if (transform.position != currentTarget)
         {
-            Vector3 dir = currentTarget - transform.position;
-            //取得轉向角度
-            dir.z = 0f;
-            dir.Normalize();
-            float angle = Mathf.Atan2(dir.x, dir.y) * Mathf.Rad2Deg;
-            if(!isAware) RotateTarget(this.EnemyHead, currentTarget, property.HeadRotSpeed);
-            RotateTarget(this.gameObject, currentTarget, property.RotateSpeed);
+            // Vector3 dir = currentTarget - transform.position;
+            // //取得轉向角度
+            // dir.z = 0f;
+            // dir.Normalize();
+            // float angle = Mathf.Atan2(dir.x, dir.y) * Mathf.Rad2Deg;
+            if(!isAware) RotateTarget(this.EnemyHead, currentTarget, property.HeadRotSpeed, out float headAngle);
+            RotateTarget(this.gameObject, currentTarget, property.RotateSpeed, out float angle);
 
             //角度容許值：±3°
             if (Quaternion.Angle(transform.rotation, Quaternion.Euler(0, 0, -angle)) <= 3.0f)
@@ -176,11 +176,11 @@ public class EnemyTank : MonoBehaviour
                 //Find New Curve
                 if (forward)
                 {
-                    InitPatrolPoint(transform.position, s_patrolCtrl.CtrlPt_1.position, s_patrolCtrl.CtrlPt_2.position, s_patrolCtrl.EndPt.position);
+                    InitPatrolPoint(transform.position, s_patrolCtrl.points[1], s_patrolCtrl.points[2], s_patrolCtrl.points[3]);
                     forward = !forward;
                     return;
                 }
-                InitPatrolPoint(transform.position, s_patrolCtrl.CtrlPt_2.position, s_patrolCtrl.CtrlPt_1.position, s_patrolCtrl.StartPt.position);
+                InitPatrolPoint(transform.position, s_patrolCtrl.points[2], s_patrolCtrl.points[1], s_patrolCtrl.points[0]);
                 forward = !forward;
                 return;
             }
@@ -192,7 +192,7 @@ public class EnemyTank : MonoBehaviour
     public void LookTarget(GameObject target)
     {
         if (target != null)
-            RotateTarget(this.EnemyHead, target, property.HeadRotSpeed);
+            RotateTarget(this.EnemyHead, target, property.HeadRotSpeed, out float angle);
     }
 
     //尋找到currentTarget的最短路徑
@@ -215,21 +215,15 @@ public class EnemyTank : MonoBehaviour
     public void TraceTarget(GameObject target)
     {
         if(target == null) return;
-        else if(DistanceToPalyer() > 5f)
+        
+        Vector3 targetPos = target.transform.position;
+        RotateTarget(this.gameObject, targetPos, property.RotateSpeed, out float angle);
+        
+        //角度容許值：±3°
+        if (Quaternion.Angle(transform.rotation, Quaternion.Euler(0, 0, -angle)) <= 3.0f && DistanceToPalyer() > 5f)
         {
-            Vector3 targetPos = target.transform.position;
-            Vector3 direction = targetPos - EnemyHead.transform.position;
-            direction.z = 0f;
-            direction.Normalize();
-            float angle = Mathf.Atan2(direction.x, direction.y) * Mathf.Rad2Deg;
-            RotateTarget(this.gameObject, target, property.RotateSpeed);
-            
-            //角度容許值：±3°
-            if (Quaternion.Angle(transform.rotation, Quaternion.Euler(0, 0, -angle)) <= 3.0f)
-            {
-                transform.position = Vector3.MoveTowards(transform.position, targetPos, property.MoveSpeed * Time.deltaTime);
-            }   
-        }
+            transform.position = Vector3.MoveTowards(transform.position, targetPos, property.MoveSpeed * Time.deltaTime);
+        }   
     }
 
     //敵人射擊
@@ -330,22 +324,22 @@ public class EnemyTank : MonoBehaviour
     }
 
     //定速轉到定位
-    public void RotateTarget(GameObject thisObject, Vector3 targetPos, float rotateSpeed)
+    public void RotateTarget(GameObject thisObject, Vector3 targetPos, float rotateSpeed, out float angle)
     {
-        if(targetPos == null) return;
+        if(targetPos == null) {angle = 0; return;}
         Vector3 thisPos = thisObject.transform.position;
         Vector3 direction = targetPos - thisPos;
         direction.z = 0f;
         direction.Normalize();
-        float angle = Mathf.Atan2(direction.x, direction.y) * Mathf.Rad2Deg;
+        angle = Mathf.Atan2(direction.x, direction.y) * Mathf.Rad2Deg;
         thisObject.transform.rotation = Quaternion.RotateTowards(thisObject.transform.rotation, Quaternion.Euler(0, 0, -angle), rotateSpeed * Time.deltaTime);
     }
 
-    public void RotateTarget(GameObject thisObject, GameObject target, float rotateSpeed)
+    public void RotateTarget(GameObject thisObject, GameObject target, float rotateSpeed, out float angle)
     {
-        if(target == null) return;
+        if(target == null) {angle = 0; return;}
         Vector3 targetPos = target.transform.position;
-        RotateTarget(thisObject, targetPos, rotateSpeed);
+        RotateTarget(thisObject, targetPos, rotateSpeed, out angle);
     }
 
 
