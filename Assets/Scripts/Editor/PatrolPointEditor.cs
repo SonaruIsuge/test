@@ -41,6 +41,11 @@ public class PatrolPointEditor : EditorWindow {
         {
             selectPatrolObject = Selection.activeGameObject;
             PrefabUtility.RecordPrefabInstancePropertyModifications(selectPatrolObject.GetComponent<PatrolPointControl>());
+            points = selectPatrolObject.GetComponent<PatrolPointControl>().points;
+            // for(int i = 0; i < selectPatrolObject.GetComponent<PatrolPointControl>().points.Length; i++)
+            // {
+            //     points[i] = selectPatrolObject.GetComponent<PatrolPointControl>().points[i];
+            // }
         }
 
         EditorGUI.BeginDisabledGroup(true);
@@ -57,7 +62,8 @@ public class PatrolPointEditor : EditorWindow {
         startPointSet = GUILayout.Toggle(startPointSet, "Set Start Point", "Button");
         if(startPointSet)
         {
-            points[0] = new Vector3(ray.origin.x, ray.origin.y, 0);
+            selectPatrolObject.GetComponent<PatrolPointControl>().points[0] = new Vector3(ray.origin.x, ray.origin.y, 0);
+            EditorUtility.SetDirty(selectPatrolObject);
         }
 
         EditorGUILayout.Space();
@@ -66,7 +72,8 @@ public class PatrolPointEditor : EditorWindow {
         ctrlPoint1Set = GUILayout.Toggle(ctrlPoint1Set, "Set Control Point 1", "Button");
         if(ctrlPoint1Set)
         {
-            points[1] = new Vector3(ray.origin.x, ray.origin.y, 0);
+            selectPatrolObject.GetComponent<PatrolPointControl>().points[1] = new Vector3(ray.origin.x, ray.origin.y, 0);
+            EditorUtility.SetDirty(selectPatrolObject);
         }
 
         EditorGUILayout.Space();
@@ -75,7 +82,8 @@ public class PatrolPointEditor : EditorWindow {
         ctrlPoint2Set = GUILayout.Toggle(ctrlPoint2Set, "Set Control Point 2", "Button");
         if(ctrlPoint2Set)
         {
-            points[2] = new Vector3(ray.origin.x, ray.origin.y, 0);
+            selectPatrolObject.GetComponent<PatrolPointControl>().points[2] = new Vector3(ray.origin.x, ray.origin.y, 0);
+            EditorUtility.SetDirty(selectPatrolObject);
         }
 
         EditorGUILayout.Space();
@@ -84,20 +92,11 @@ public class PatrolPointEditor : EditorWindow {
         endPointSet = GUILayout.Toggle(endPointSet, "Set End Point", "Button");
         if(endPointSet)
         {
-            points[3] = new Vector3(ray.origin.x, ray.origin.y, 0);
+            selectPatrolObject.GetComponent<PatrolPointControl>().points[3] = new Vector3(ray.origin.x, ray.origin.y, 0);
+            EditorUtility.SetDirty(selectPatrolObject);
         }
 
         EditorGUILayout.Space();
-
-        EditorGUILayout.BeginHorizontal();
-
-        if(GUILayout.Button("Save Points"))
-        {
-            for(int i = 0; i < points.Length; i++)
-            {
-                selectPatrolObject.GetComponent<PatrolPointControl>().points[i] = points[i];
-            }
-        }
 
         if(GUILayout.Button("Clear All"))
         {
@@ -107,8 +106,6 @@ public class PatrolPointEditor : EditorWindow {
                 EditorUtility.SetDirty(selectPatrolObject);
             }
         }
-
-        EditorGUILayout.EndHorizontal();
 
         Repaint();
     }

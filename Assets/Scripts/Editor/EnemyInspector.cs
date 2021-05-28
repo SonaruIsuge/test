@@ -28,14 +28,14 @@ public class EnemyInspector : Editor
 
         enemy.currentHealth = EditorGUILayout.IntSlider("Enemy Health", enemy.currentHealth, 0, enemy.property.health);
 
-        enemy.Team = EditorGUILayout.IntField("Enemy Team", enemy.Team);
+        enemy.Team = (Team)EditorGUILayout.EnumPopup("Enemy Team", enemy.Team);
 
         switch(enemy.Team)
         {
-            case 0:
+            case Team.Enemy:
                 EditorGUILayout.HelpBox("Default Enemy Team", MessageType.Info);
                 break;
-            case 1:
+            case Team.Player:
                 EditorGUILayout.HelpBox("Player Team", MessageType.Warning);
                 break;
             default:

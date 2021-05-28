@@ -26,7 +26,7 @@ public class HPbar : MonoBehaviour
         // HpBarImg.color = Color.Lerp(Color.red, Color.green, HPpercent);
     }
 
-    public void UpdateHpBar(PlayerHealth sender, int currentHealth)
+    public void UpdateHpBar(Tank sender, int currentHealth)
     {
         HPpercent = currentHealth / (float)sender.property.health;
         HpBarImg.fillAmount = Mathf.Lerp(0.25f, 1, HPpercent);

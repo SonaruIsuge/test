@@ -7,12 +7,20 @@ using Lean.Pool;
 using System;
 using UnityEngine.Tilemaps;
 
-public enum EnemyState
+public enum EnemyTankState
 {
     Patrol,
     Aware,
     Attack,
     Die
+}
+
+
+public enum Team
+{
+    Enemy,
+    Player,
+    Other
 }
 
 public class EnemyTank : MonoBehaviour
@@ -30,8 +38,7 @@ public class EnemyTank : MonoBehaviour
     public GameObject player;
     private ScaledTimer reloadTimer;
     public int currentHealth;
-    public int Team = 0;
-    private Rigidbody2D enemyRb;
+    public Team Team = Team.Enemy;
 
     public GameObject PatrolCtrlObj;
     public PatrolPointControl s_patrolCtrl;
@@ -49,24 +56,24 @@ public class EnemyTank : MonoBehaviour
     private int startX, startY, endX, endY;
     private List<PathNode> path;
 
-    public Dictionary<EnemyState, State> StateDic;
+    public Dictionary<EnemyTankState, State> StateDic;
 
     public static event Action<EnemyTank, int> EnemyHpChange;
 
 
     void Awake()
     {
-        StateDic = new Dictionary<EnemyState, State>()
+        StateDic = new Dictionary<EnemyTankState, State>()
         {
-            {EnemyState.Patrol, new PatrolState()},
-            {EnemyState.Aware, new AwareState()},
-            {EnemyState.Attack, new AttackState()},
-            {EnemyState.Die, new DieState()}
+            {EnemyTankState.Patrol, new PatrolState()},
+            {EnemyTankState.Aware, new AwareState()},
+            {EnemyTankState.Attack, new AttackState()},
+            {EnemyTankState.Die, new DieState()}
         };
+
         currentHealth = property.health;
         EnemySprite.sprite = property.MiniMapIcon;
-        player = FindObjectOfType<PlayerInput>().gameObject;
-        enemyRb = GetComponent<Rigidbody2D>();
+        player = GameObject.FindWithTag("Player");
         PatrolQueue = new Queue<Vector3>();
         s_patrolCtrl = PatrolCtrlObj.GetComponent<PatrolPointControl>();
         currentTarget = transform.position;
@@ -79,8 +86,10 @@ public class EnemyTank : MonoBehaviour
 
     void Start()
     {
-        CurrentState = StateDic[EnemyState.Patrol];
+        // set start state
+        CurrentState = StateDic[EnemyTankState.Patrol];
         CurrentState.Enter(this);
+        // init fire reload timer
         reloadTimer = new ScaledTimer(property.ReloadTime, false);
     }
 
@@ -109,7 +118,7 @@ public class EnemyTank : MonoBehaviour
     }
 
     //改變狀態
-    public void ChangeState(EnemyState newState)
+    public void ChangeState(EnemyTankState newState)
     {
         CurrentState.Exit(this);
         CurrentState = StateDic[newState];
@@ -131,42 +140,18 @@ public class EnemyTank : MonoBehaviour
     {
         if(path != null && path.Count > 0)
         {
-            Vector3 targetPos = new Vector3(path[0].x, path[0].y) * cellSize + Vector3.one * (cellSize/2) + path[0].grid.originPosition;
-            if(transform.position != targetPos)
-            {
-                // Vector3 dir = targetPos - transform.position;
-                // //取得轉向角度
-                // dir.z = 0f;
-                // dir.Normalize();
-                // float angle = Mathf.Atan2(dir.x, dir.y) * Mathf.Rad2Deg;
-                RotateTarget(this.EnemyHead, targetPos, property.HeadRotSpeed, out float headAngle);
-                RotateTarget(this.gameObject, targetPos, property.RotateSpeed, out float angle);
-
-                //角度容許值：±3°
-                if (Quaternion.Angle(transform.rotation, Quaternion.Euler(0, 0, -angle)) <= 3.0f)
-                {
-                    transform.position = Vector3.MoveTowards(transform.position, targetPos, property.MoveSpeed * Time.deltaTime);
-                }
-            }
-            else 
-            {
-                path.Remove(path[0]);                
-            }
+            MoveToPath();
         }
         else if (transform.position != currentTarget)
         {
-            // Vector3 dir = currentTarget - transform.position;
-            // //取得轉向角度
-            // dir.z = 0f;
-            // dir.Normalize();
-            // float angle = Mathf.Atan2(dir.x, dir.y) * Mathf.Rad2Deg;
+            float angle;
             if(!isAware) RotateTarget(this.EnemyHead, currentTarget, property.HeadRotSpeed, out float headAngle);
-            RotateTarget(this.gameObject, currentTarget, property.RotateSpeed, out float angle);
-
+            RotateTarget(this.gameObject, currentTarget, property.RotateSpeed, out angle);
+            //Debug.Log(angle);
             //角度容許值：±3°
-            if (Quaternion.Angle(transform.rotation, Quaternion.Euler(0, 0, -angle)) <= 3.0f)
+            if (Quaternion.Angle(transform.rotation, Quaternion.Euler(0, 0, -CalAngle(this.gameObject, currentTarget))) <= 3.0f)
             {
-                transform.position = Vector3.MoveTowards(transform.position, currentTarget, property.MoveSpeed * Time.deltaTime);
+                MoveTarget(this.gameObject, currentTarget, property.MoveSpeed);
             }
         }
         else
@@ -185,6 +170,26 @@ public class EnemyTank : MonoBehaviour
                 return;
             }
             currentTarget = PatrolQueue.Dequeue();
+        }
+    }
+
+    public void MoveToPath()
+    {
+        Vector3 targetPos = pathFinding.GetGrid().GetWorldPosition(path[0].x, path[0].y) + Vector3.one * (cellSize/2);  //取得grid方塊中間位置
+        if(transform.position != targetPos)
+        {
+            RotateTarget(this.EnemyHead, targetPos, property.HeadRotSpeed, out float headAngle);
+            RotateTarget(this.gameObject, targetPos, property.RotateSpeed, out float angle);
+
+            //角度容許值：±3°
+            if (Quaternion.Angle(transform.rotation, Quaternion.Euler(0, 0, -angle)) <= 3.0f)
+            {
+                transform.position = Vector3.MoveTowards(transform.position, targetPos, property.MoveSpeed * Time.deltaTime);
+            }
+        }
+        else 
+        {
+            path.Remove(path[0]);                
         }
     }
 
@@ -264,11 +269,12 @@ public class EnemyTank : MonoBehaviour
     {
         if (PatrolQueue.Count == 0)
         {
-            PatrolQueue = new Queue<Vector3>();
+            // PatrolQueue = new Queue<Vector3>();
             for (int i = 1; i <= segmentNum; i++)
             {
                 float t = i / (float)segmentNum;
                 PatrolQueue.Enqueue(CalBezier(t, start, control1, control2, end));
+                
             }
             currentTarget = PatrolQueue.Dequeue();
         }
@@ -304,6 +310,7 @@ public class EnemyTank : MonoBehaviour
         //Gizmos.color = tempColor;
     }
 
+    //設定pathfinding 障礙物
     public void SetObstacle()
     {
         for(int x = 0; x < tilemap.cellBounds.size.x; x++)
@@ -342,5 +349,18 @@ public class EnemyTank : MonoBehaviour
         RotateTarget(thisObject, targetPos, rotateSpeed, out angle);
     }
 
+    private float CalAngle(GameObject thisObject, Vector3 targetPos)
+    {
+        if(targetPos == null) return 0;
+        Vector3 thisPos = thisObject.transform.position;
+        Vector3 direction = targetPos - thisPos;
+        direction.z = 0f;
+        direction.Normalize();
+        return Mathf.Atan2(direction.x, direction.y) * Mathf.Rad2Deg;
+    }
 
+    public void MoveTarget(GameObject thisObject, Vector3 targetPos, float moveSpeed)
+    {
+        thisObject.transform.position = Vector3.MoveTowards(transform.position, targetPos, moveSpeed * Time.deltaTime);
+    }
 }

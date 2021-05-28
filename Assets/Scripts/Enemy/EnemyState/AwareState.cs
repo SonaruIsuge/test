@@ -15,15 +15,15 @@ public class AwareState : State
         //enemy.TraceTarget(enemy.player);
         if(enemy.currentHealth <= 0)
         {
-            enemy.ChangeState(EnemyState.Die);
+            enemy.ChangeState(EnemyTankState.Die);
         }
         if(enemy.DistanceToPalyer() <= enemy.property.AttackRange)
         {
-            enemy.ChangeState(EnemyState.Attack);
+            enemy.ChangeState(EnemyTankState.Attack);
         }
         if(enemy.DistanceToPalyer() > enemy.property.ViewRange)
         {
-            enemy.ChangeState(EnemyState.Patrol);
+            enemy.ChangeState(EnemyTankState.Patrol);
         }
     }
     public override void Exit(EnemyTank enemy)

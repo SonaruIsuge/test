@@ -6,11 +6,9 @@ using UnityEngine.Tilemaps;
 
 public class test : MonoBehaviour
 {
-    List<TestComponent> components = new List<TestComponent>();
-    public Rigidbody2D Rigidbody { get; private set; }
+    [SerializeField]List<TestComponent> components = new List<TestComponent>();
     private void Start()
     {
-        Rigidbody = GetComponent<Rigidbody2D>();
         components.Add(new Move(20f, this));
         components.Add(new Attack(10f, this));
     }
@@ -35,7 +33,7 @@ abstract public class TestComponent
 
 public class Move : TestComponent
 {
-    float vel;
+    public float vel;
     public Move(float vel, test parent) : base(parent)
     {
         this.vel = vel;
@@ -43,8 +41,7 @@ public class Move : TestComponent
 
     public override void Tick()
     {
-        Parent.Rigidbody.velocity=default;
-        Debug.Log($"Move Tikc{vel}");
+        // Debug.Log($"Move Tikc{vel}");
     }
 }
 
@@ -61,6 +58,6 @@ public class Attack : TestComponent
 
     public override void Tick()
     {
-        Debug.Log($"Attack Tikc{attack}");
+        // Debug.Log($"Attack Tikc{attack}");
     }
 }

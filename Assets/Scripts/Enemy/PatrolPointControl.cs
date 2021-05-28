@@ -70,6 +70,12 @@ public class PatrolPointControl : MonoBehaviour
             }
             Gizmos.DrawLine(cv, nv);
         }
+
+        //控制點
+        for(int i = 0; i < points.Length; i++)
+        {
+            Gizmos.DrawSphere(points[i], .2f);
+        }
     }
 
     Vector3 CalBezier(float t, Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3)

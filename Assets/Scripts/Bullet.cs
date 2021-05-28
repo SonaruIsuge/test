@@ -10,7 +10,7 @@ public class Bullet : MonoBehaviour
     public float time;
     private ScaledTimer bulletDestroyTImer;
     public int attack;
-    public int Team;
+    public Team Team;
 
     void OnEnable() 
     {

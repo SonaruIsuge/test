@@ -18,7 +18,7 @@ public class HPText : MonoBehaviour
     // }
 
 
-    public void UpdateHpText(PlayerHealth sender, int currentHealth)
+    public void UpdateHpText(Tank sender, int currentHealth)
     {
         if (currentHealth <= 0)
         {

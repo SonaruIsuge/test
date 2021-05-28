@@ -17,11 +17,11 @@ public class AttackState : State
         
         if(enemy.currentHealth <= 0)
         {
-            enemy.ChangeState(EnemyState.Die);
+            enemy.ChangeState(EnemyTankState.Die);
         }
         if(enemy.DistanceToPalyer() > enemy.property.AttackRange)
         {
-            enemy.ChangeState(EnemyState.Aware);
+            enemy.ChangeState(EnemyTankState.Aware);
         }
     }
     public override void Exit(EnemyTank enemy)
