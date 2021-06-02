@@ -7,23 +7,23 @@ public class EnemyHpText : MonoBehaviour
 {
     [SerializeField]Text enemyName=null;
 
-    void OnEnable()
-    {
-        EnemyTank.EnemyHpChange += UpdateEnemyHpText;
-    }
-    
-    void OnDisable()
-    {
-        EnemyTank.EnemyHpChange -= UpdateEnemyHpText;
-    }
+    // void OnEnable()
+    // {
+    //     EnemyTank.EnemyHpChange += UpdateEnemyHpText;
+    // }
+    //
+    // void OnDisable()
+    // {
+    //     EnemyTank.EnemyHpChange -= UpdateEnemyHpText;
+    // }
 
     // Start is called before the first frame update
-    void Start()
+    void Awake()
     {
         enemyName.text = "";
     }
 
-    void UpdateEnemyHpText(EnemyTank sender, int currentHealth)
+    public void UpdateEnemyHpText(Enemy sender, int currentHealth)
     {
         enemyName.text = sender.property.Name;
     }

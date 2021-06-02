@@ -6,8 +6,8 @@ public class EnemyAttackState : BaseState
 {
     public override void Enter(Enemy enemy)
     {
-        enemy.enemyMoveBehavior = enemy.GetBehavior<TracePlayerMove>(enemy, p => new TracePlayerMove(p));
-        enemy.enemyAttackBehavior = new PlayerAttack(enemy);
+        enemy.enemyMoveBehavior = enemy.GetMoveBehavior<TracePlayerMove>(enemy, p => new TracePlayerMove(p));
+        enemy.enemyAttackBehavior = enemy.GetAttackBehavior<PlayerAttack>(enemy, p => new PlayerAttack(p));
     }
     public override void Stay(Enemy enemy)
     {
@@ -15,13 +15,13 @@ public class EnemyAttackState : BaseState
         enemy.enemyMoveBehavior?.Move();
         enemy.enemyAttackBehavior?.Attack();
         
-        if(enemy.currentHealth <= 0)
+        if(enemy.tankHealth.GetCurrentHealth() <= 0)
         {
-            enemy.stateMachine.ChangeState(EnemyState.DieState);
+            enemy.StateMachine.ChangeState(EnemyState.DieState);
         }
         if(enemy.DistanceToPalyer() > enemy.property.AttackRange)
         {
-            enemy.stateMachine.ChangeState(EnemyState.AwareState);
+            enemy.StateMachine.ChangeState(EnemyState.AwareState);
         }
     }
     public override void Exit(Enemy enemy)

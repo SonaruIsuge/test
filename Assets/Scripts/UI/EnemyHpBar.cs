@@ -12,17 +12,17 @@ public class EnemyHpBar : MonoBehaviour
     private float countTime = 5f;
     private ScaledTimer showBarTime;
 
-    void OnEnable()
-    {
-        EnemyTank.EnemyHpChange += UpdateEnemyHpBar;
-    }
+    // void OnEnable()
+    // {
+    //     EnemyTank.EnemyHpChange += UpdateEnemyHpBar;
+    // }
+    //
+    // void OnDisable()
+    // {
+    //     EnemyTank.EnemyHpChange -= UpdateEnemyHpBar;
+    // }
 
-    void OnDisable()
-    {
-        EnemyTank.EnemyHpChange -= UpdateEnemyHpBar;
-    }
-
-    void Start(){
+    void Awake(){
         SetHpBarAlpha(ImgAlpha);
         showBarTime = new ScaledTimer(countTime, false);
     }
@@ -47,7 +47,7 @@ public class EnemyHpBar : MonoBehaviour
         else EnemyHpImg.GetComponentInParent<CanvasGroup>().alpha = 0;
     }
 
-    void UpdateEnemyHpBar(EnemyTank sender, int currentHealth)
+    public void UpdateEnemyHpBar(Enemy sender, int currentHealth)
     {
         showBarTime.Reset();
         ImgAlpha = true;

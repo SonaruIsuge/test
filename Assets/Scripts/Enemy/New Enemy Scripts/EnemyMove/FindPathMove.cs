@@ -5,64 +5,73 @@ using UnityEngine.Tilemaps;
 
 public class FindPathMove : EnemyMoveBehavior
 {
+    private PathFinding pathFinding;
+    private List<PathNode> path;
+    private BoundsInt cellBounds, colCellBounds;
     private float MAP_CELL_SIZE = 2f;
     private int startX, startY, endX, endY;
 
     public FindPathMove(Enemy parent) : base(parent)
     {
+        parent.colTilemap.CompressBounds();
+        parent.tilemap.CompressBounds();
+        cellBounds = parent.tilemap.cellBounds;
+        colCellBounds = parent.colTilemap.cellBounds;
+        pathFinding = new PathFinding(cellBounds.size.x, cellBounds.size.y, MAP_CELL_SIZE, parent.tilemap);
         SetObstacle();
+        path = new List<PathNode>();
         FindPathToCurrentTarget();
     }
 
     public override void Move()
     {
         //取得grid方塊中間位置
-        Vector3 targetPos = parent.pathFinding.GetGrid().GetWorldPosition(parent.path[0].x, parent.path[0].y) + Vector3.one * (MAP_CELL_SIZE/2);  
+        Vector3 targetPos = pathFinding.GetGrid().GetWorldPosition(path[0].x, path[0].y) + Vector3.one * (MAP_CELL_SIZE/2);  
         
         if(parent.transform.position != targetPos)
         {
             parent.RotateTarget(parent.gameObject, targetPos, parent.property.RotateSpeed);
 
             //角度容許值：±3°
-            if (Quaternion.Angle(parent.transform.rotation, Quaternion.Euler(0, 0, -parent.CalAngle(parent.gameObject, parent.currentTarget))) <= 3.0f)
+            if (Quaternion.Angle(parent.transform.rotation, Quaternion.Euler(0, 0, -parent.CalAngle(parent.gameObject, targetPos))) <= 3.0f)
             {
                 parent.MoveTarget(parent.gameObject, targetPos, parent.property.MoveSpeed);
             }
         }
         else 
         {
-            parent.path.Remove(parent.path[0]);
+            path.Remove(path[0]);
         }
     }
 
-    public void FindPathToCurrentTarget()
+    private void FindPathToCurrentTarget()
     {
-        parent.path.Clear();
-        parent.pathFinding.GetGrid().GetXY(parent.transform.position, out startX, out startY);
-        parent.pathFinding.GetGrid().GetXY(parent.currentTarget, out endX, out endY);
-        parent.path = parent.pathFinding.FindPath(startX, startY, endX, endY);
+        path.Clear();
+        pathFinding.GetGrid().GetXY(parent.transform.position, out startX, out startY);
+        pathFinding.GetGrid().GetXY(parent.currentTarget, out endX, out endY);
+        path = pathFinding.FindPath(startX, startY, endX, endY);
 
-        for(int i = 0; i < parent.path.Count - 1; i++)
+        for(int i = 0; i < path.Count - 1; i++)
         {
-            Debug.DrawLine(parent.pathFinding.GetGrid().GetWorldPosition(parent.path[i].x, parent.path[i].y) + Vector3.one * (MAP_CELL_SIZE/2), 
-            parent.pathFinding.GetGrid().GetWorldPosition(parent.path[i+1].x, parent.path[i+1].y)+ Vector3.one * (MAP_CELL_SIZE/2), Color.green, 100f);
+            Debug.DrawLine(pathFinding.GetGrid().GetWorldPosition(path[i].x, path[i].y) + Vector3.one * (MAP_CELL_SIZE/2), 
+            pathFinding.GetGrid().GetWorldPosition(path[i+1].x, path[i+1].y)+ Vector3.one * (MAP_CELL_SIZE/2), Color.green, 100f);
         }
     }
 
-    public void SetObstacle()
+    private void SetObstacle()
     {
-        for(int x = 0; x < parent.tilemap.cellBounds.size.x; x++)
+        for(int x = 0; x < cellBounds.size.x; x++)
         {
-            for(int y = 0; y < parent.tilemap.cellBounds.size.y; y++)
+            for(int y = 0; y < cellBounds.size.y; y++)
             {
                 TileBase colTile = parent.colTilemap.GetTile(new Vector3Int(x, y, 0));
                 if(colTile != null) 
                 {
-                    parent.pathFinding.GetNode(x, y)?.SetIsWalkable(false);
-                    parent.pathFinding.GetNode(x-1, y)?.SetIsWalkable(false);
-                    parent.pathFinding.GetNode(x+1, y)?.SetIsWalkable(false);
-                    parent.pathFinding.GetNode(x, y-1)?.SetIsWalkable(false);
-                    parent.pathFinding.GetNode(x, y+1)?.SetIsWalkable(false);
+                    pathFinding.GetNode(x, y)?.SetIsWalkable(false);
+                    pathFinding.GetNode(x-1, y)?.SetIsWalkable(false);
+                    pathFinding.GetNode(x+1, y)?.SetIsWalkable(false);
+                    pathFinding.GetNode(x, y-1)?.SetIsWalkable(false);
+                    pathFinding.GetNode(x, y+1)?.SetIsWalkable(false);
                 }
             }
         }

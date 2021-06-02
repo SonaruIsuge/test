@@ -4,9 +4,9 @@ using UnityEngine;
 
 public class EnemyStateMachine
 {
-    public Enemy enemy;
-    public BaseState CurrentState;
-    public Dictionary<EnemyState, BaseState> StateDic;
+    private Enemy enemy;
+    private BaseState CurrentState;
+    private Dictionary<EnemyState, BaseState> StateDic;
 
     public EnemyStateMachine(Enemy enemy)
     {
@@ -36,8 +36,4 @@ public class EnemyStateMachine
         CurrentState?.Enter(enemy);
     }
 
-    public BaseState GetCurrentState()
-    {
-        return CurrentState;
-    }
 }

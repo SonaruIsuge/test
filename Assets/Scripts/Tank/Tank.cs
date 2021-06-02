@@ -28,7 +28,7 @@ public class Tank : MonoBehaviour
         tankEngine = new TankEngine(tankInput, this.transform, property);
         tankHeadRotate = new TankHeadRotate(tankInput, tankHead, property);
         tankFire = new TankFire(tankInput, tankShootPoint, property, fireAnimator, team);
-        tankHealth = new TankHealth(property, team);
+        tankHealth = new TankHealth(property);
 
         HandleHpChange?.Invoke(this, tankHealth.GetCurrentHealth());
     }

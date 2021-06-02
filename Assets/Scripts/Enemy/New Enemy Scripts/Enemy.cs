@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using CircleCal.Math;
 using Scream.UniMO;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.Tilemaps;
 
 public enum EnemyState
@@ -17,7 +18,7 @@ public enum EnemyState
 public class Enemy : MonoBehaviour
 {
     //enemy state
-    public EnemyStateMachine stateMachine;
+    public EnemyStateMachine StateMachine;
 
     // enemy properties
     public TankProperty property;
@@ -33,58 +34,61 @@ public class Enemy : MonoBehaviour
     //enemy shoot & spawn bullet
     public GameObject Bullet;
     public Animator shootAnimator;
-    public ScaledTimer reloadTimer;
 
     //enemy health
-    public int currentHealth;
-    public static event Action<EnemyTank, int> EnemyHpChange;
+    [SerializeField] public UnityEvent<Enemy, int> EnemyHpChange;
 
     //enemy patrol
     public PatrolPointControl s_patrolCtrl;
-    public Queue<Vector3> PatrolQueue;
     public int segmentNum;
     public Vector3 currentTarget;
-    public bool forward = true;
 
     // enemy path finding
     public Tilemap tilemap;
     public Tilemap colTilemap;
-    public float cellSize;
-    public PathFinding pathFinding;
-    public List<PathNode> path;
 
     // Enemy Behaviors
+    public TankHealth tankHealth;
     public EnemyMoveBehavior enemyMoveBehavior;
     public EnemyAttackBehavior enemyAttackBehavior;
     public Dictionary<Type, EnemyMoveBehavior> moveBehaviors = new Dictionary<Type, EnemyMoveBehavior>();
+    public Dictionary<Type, EnemyAttackBehavior> attackBehaviors = new Dictionary<Type, EnemyAttackBehavior>();
+    
     void Awake()
     {
-        stateMachine = new EnemyStateMachine(this);
-        stateMachine.InitState();
+        tankHealth = new TankHealth(property);
+        
+        EnemySprite.sprite = property.MiniMapIcon;
+        player = GameObject.FindWithTag("Player");
+        
+        StateMachine = new EnemyStateMachine(this);
+        StateMachine.InitState();
 
-        reloadTimer = new ScaledTimer(property.ReloadTime, false);
-
-        colTilemap.CompressBounds();
-        tilemap.CompressBounds();
-        pathFinding = new PathFinding(tilemap.cellBounds.size.x, tilemap.cellBounds.size.y, cellSize, tilemap);
-        path = new List<PathNode>();
-
-        PatrolQueue = new Queue<Vector3>();
         currentTarget = transform.position;
     }
 
     void Start()
     {
         // set start state
-        stateMachine.ChangeState(EnemyState.PatrolState);
+        StateMachine.ChangeState(EnemyState.PatrolState);
     }
 
     void Update()
     {
-        stateMachine.UpdateState();
+        StateMachine.UpdateState();
     }
 
-    public T GetBehavior<T>(Enemy enemy, Func<Enemy, T>constructor) where T : EnemyMoveBehavior
+    private void OnCollisionEnter2D(Collision2D col)
+    {
+        var bullet = col.gameObject.GetComponent<Bullet>();
+        if(bullet && bullet.Team != Team)
+        {
+            tankHealth.TakeDamage(bullet.attack);
+            EnemyHpChange?.Invoke(this, tankHealth.GetCurrentHealth());
+        }
+    }
+
+    public T GetMoveBehavior<T>(Enemy enemy, Func<Enemy, T>constructor) where T : EnemyMoveBehavior
     {
         Type type = typeof(T);
         if(!moveBehaviors.ContainsKey(type))
@@ -95,9 +99,20 @@ public class Enemy : MonoBehaviour
         return moveBehaviors[type] as T;
     }
 
+    public T GetAttackBehavior<T>(Enemy enemy, Func<Enemy, T> constructor) where T : EnemyAttackBehavior
+    {
+        Type type = typeof(T);
+        if (!attackBehaviors.ContainsKey(type))
+        {
+            var result = constructor(enemy);
+            attackBehaviors.Add(type, result);
+        }
+        return attackBehaviors[type] as T;
+    }
+
     public float DistanceToPalyer()
     {
-        if (player != null)
+        if (player)
         {
             return Vector2.Distance(player.transform.position, EnemyHead.transform.position);
         }

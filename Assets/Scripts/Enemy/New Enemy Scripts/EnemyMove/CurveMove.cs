@@ -4,11 +4,12 @@ using UnityEngine;
 
 public class CurveMove : EnemyMoveBehavior
 {
-    // public Queue<Vector3> PatrolQueue;
+    private Queue<Vector3> PatrolQueue;
+    private bool isForward = true;
     
     public CurveMove(Enemy parent) :base(parent)
     {
-
+        PatrolQueue = new Queue<Vector3>();
     }
     public override void Move()
     {
@@ -22,35 +23,34 @@ public class CurveMove : EnemyMoveBehavior
         }
         else 
         {
-            if (parent.PatrolQueue.Count == 0)
+            if (PatrolQueue.Count == 0)
             {
                 //Find New Curve
-                if (parent.forward)
+                if (isForward)
                 {
                     InitPatrolPoint(parent.transform.position, parent.s_patrolCtrl.points[1], parent.s_patrolCtrl.points[2], parent.s_patrolCtrl.points[3]);
-                    parent.forward = !parent.forward;
+                    isForward = !isForward;
                     return;
                 }
                 InitPatrolPoint(parent.transform.position, parent.s_patrolCtrl.points[2], parent.s_patrolCtrl.points[1], parent.s_patrolCtrl.points[0]);
-                parent.forward = !parent.forward;
+                isForward = !isForward;
                 return;
             }
-            parent.currentTarget = parent.PatrolQueue.Dequeue();
+            parent.currentTarget = PatrolQueue.Dequeue();
         }
     }
 
     private void InitPatrolPoint(Vector3 start, Vector3 control1, Vector3 control2, Vector3 end)
     {
-        if (parent.PatrolQueue.Count == 0)
+        if (PatrolQueue.Count != 0) return;
+        
+        PatrolQueue = new Queue<Vector3>();
+        for (int i = 1; i <= parent.segmentNum; i++)
         {
-            parent.PatrolQueue = new Queue<Vector3>();
-            for (int i = 1; i <= parent.segmentNum; i++)
-            {
-                float t = i / (float)parent.segmentNum;
-                parent.PatrolQueue.Enqueue(CalBezier(t, start, control1, control2, end));
-            }
-            parent.currentTarget = parent.PatrolQueue.Dequeue();
+            float t = i / (float)parent.segmentNum;
+            PatrolQueue.Enqueue(CalBezier(t, start, control1, control2, end));
         }
+        parent.currentTarget = PatrolQueue.Dequeue();
     }
 
     //計算貝茲曲線

@@ -4,7 +4,6 @@ using UnityEngine;
 
 public class RandomMove : EnemyMoveBehavior
 {
-    private Vector3 destination;
     private float MIN_DISTANCE =  1.5f;
     private float RANDOM_LENGTH = 10f;
     private float OBETACLE_DETECT_LENGTH = 4f;
@@ -23,23 +22,23 @@ public class RandomMove : EnemyMoveBehavior
         {
             GetNewDestination();
         }
-        parent.RotateTarget(parent.gameObject, destination, parent.property.RotateSpeed);
-        if(Quaternion.Angle(parent.transform.rotation, Quaternion.Euler(0, 0, -parent.CalAngle(parent.gameObject, destination))) <= 3.0f)
+        parent.RotateTarget(parent.gameObject, parent.currentTarget, parent.property.RotateSpeed);
+        if(Quaternion.Angle(parent.transform.rotation, Quaternion.Euler(0, 0, -parent.CalAngle(parent.gameObject, parent.currentTarget))) <= 3.0f)
         {
             if(IsPathBlocked())
             {
                 GetNewDestination();
                 return;
             }
-            parent.MoveTarget(parent.gameObject , destination, parent.property.MoveSpeed);
+            parent.MoveTarget(parent.gameObject , parent.currentTarget, parent.property.MoveSpeed);
         }        
     }
 
     private bool NeedNewDestination()
     {
-        if(destination == Vector3.zero) return true;
+        if(parent.currentTarget == Vector3.zero) return true;
 
-        var distance = Vector3.Distance(parent.transform.position, destination);
+        var distance = Vector3.Distance(parent.transform.position, parent.currentTarget);
         if(distance <= MIN_DISTANCE) return true;
 
         return false;
@@ -47,9 +46,10 @@ public class RandomMove : EnemyMoveBehavior
 
     private void GetNewDestination()
     {
-        Vector3 randomPos = parent.transform.position + parent.transform.up * 4f + 
-                        new Vector3(Random.Range(RANDOM_LENGTH, -RANDOM_LENGTH), Random.Range(RANDOM_LENGTH, -RANDOM_LENGTH), 0);
-        destination = randomPos;
+        var transform = parent.transform;
+        Vector3 randomPos = transform.position + transform.up * 4f + 
+                            new Vector3(Random.Range(RANDOM_LENGTH, -RANDOM_LENGTH), Random.Range(RANDOM_LENGTH, -RANDOM_LENGTH), 0);
+        parent.currentTarget = randomPos;
     }
 
     private bool IsPathBlocked()
@@ -65,9 +65,9 @@ public class RandomMove : EnemyMoveBehavior
         return false;
     }
 
-    public void DebugRay()
+    private void DebugRay()
     {
-        Debug.DrawLine(parent.transform.position, destination, Color.blue);
+        Debug.DrawLine(parent.transform.position, parent.currentTarget, Color.blue);
         Vector3 leftStart = Quaternion.Euler(0, 0, -45) * parent.transform.up * OBETACLE_DETECT_LENGTH;
         for(int i = 0; i < rayAmount; i++)
         {

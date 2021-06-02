@@ -7,12 +7,10 @@ public class TankHealth
 {
     private TankProperty property;
     private int currentHealth;
-    private Team team;
 
-    public TankHealth(TankProperty property, Team team)
+    public TankHealth(TankProperty property)
     {
         this.property = property;
-        this.team = team;
         currentHealth = property.health;
     }
 
