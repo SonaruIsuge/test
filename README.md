@@ -1,6 +1,7 @@
 # Unity-test
 ### exercise
 * State Pattern
+* Strategy Pattern
 * Object Pool
 * Tilemap
 * Inspector Editor
